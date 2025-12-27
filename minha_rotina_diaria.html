@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Minha Rotina Diária</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: #e5e7eb;
+  padding: 20px;
+}
+h1, h2 { text-align: center; }
+.card {
+  background: #1e293b;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+}
+label { display:block; margin-top:10px; }
+input, select, textarea {
+  width:100%; padding:8px; margin-top:5px;
+  border-radius:6px; border:none;
+}
+.task { display:flex; align-items:center; margin-top:10px; }
+.task input { width:auto; margin-right:10px; }
+button {
+  width:100%; padding:10px; margin-top:15px;
+  border:none; border-radius:8px;
+  background:#22c55e; font-size:16px;
+}
+.streak { text-align:center; font-size:18px; margin-top:10px; }
+small { color:#94a3b8; }
+</style>
+</head>
+<body>
+
+<h1>Minha Rotina Diária</h1>
+
+<div class="card">
+<h2>Perfil</h2>
+<label>Nome <input id="nome"></label>
+<label>Idade (anos) <input type="number" id="anos"></label>
+<label>Meses <input type="number" id="meses"></label>
+<label>Dias <input type="number" id="dias"></label>
+<label>Altura (cm) <input type="number" id="altura"></label>
+<label>Peso (kg) <input type="number" id="peso"></label>
+<button onclick="salvarPerfil()">Salvar Perfil</button>
+</div>
+
+<div class="card">
+<h2>Tarefas de Hoje</h2>
+
+<div class="task"><input type="checkbox" id="agua1">Água 500ml</div>
+<div class="task"><input type="checkbox" id="agua2">Água 1L</div>
+<div class="task"><input type="checkbox" id="agua3">Água 1,5L</div>
+<div class="task"><input type="checkbox" id="agua4">Água 2L</div>
+
+<div class="task"><input type="checkbox" id="treino">Treinar</div>
+<div class="task"><input type="checkbox" id="descanso">Descanso ativo / alongamento</div>
+<div class="task"><input type="checkbox" id="sol">Sol direto 15 min</div>
+<div class="task"><input type="checkbox" id="ler">Ler 5 minutos</div>
+<div class="task"><input type="checkbox" id="handgrip">Handgrip 5 minutos</div>
+<div class="task"><input type="checkbox" id="sono">Dormiu antes das 23h</div>
+
+<label>Energia do dia
+<select id="energia">
+  <option value="">Selecione</option>
+  <option value="baixa">Baixa</option>
+  <option value="media">Média</option>
+  <option value="alta">Alta</option>
+</select>
+</label>
+
+<label>Observações rápidas
+<textarea id="obs"></textarea>
+</label>
+
+<div class="streak">🔥 Sequência perfeita: <span id="streak">0</span> dias</div>
+<small>As tarefas reiniciam automaticamente todo dia.</small>
+</div>
+
+<div class="card">
+<h2>Peso semanal</h2>
+<label>Peso da semana (kg)
+<input type="number" id="pesoSemanal"></label>
+<button onclick="salvarPeso()">Salvar Peso</button>
+</div>
+
+<script>
+const hoje = new Date().toDateString();
+
+function salvarPerfil() {
+  localStorage.setItem('perfil', JSON.stringify({
+    nome:nome.value, anos:anos.value, meses:meses.value,
+    dias:dias.value, altura:altura.value, peso:peso.value
+  }));
+}
+
+function carregarPerfil() {
+  const p = JSON.parse(localStorage.getItem('perfil'));
+  if(!p) return;
+  nome.value=p.nome; anos.value=p.anos; meses.value=p.meses;
+  dias.value=p.dias; altura.value=p.altura; peso.value=p.peso;
+}
+
+function salvarPeso(){
+  localStorage.setItem('pesoSemanal', pesoSemanal.value);
+}
+
+function salvarTarefas() {
+  const tarefas = {
+    data:hoje,
+    agua1:agua1.checked, agua2:agua2.checked,
+    agua3:agua3.checked, agua4:agua4.checked,
+    treino:treino.checked, descanso:descanso.checked,
+    sol:sol.checked, ler:ler.checked,
+    handgrip:handgrip.checked, sono:sono.checked,
+    energia:energia.value, obs:obs.value
+  };
+  localStorage.setItem('tarefas', JSON.stringify(tarefas));
+  atualizarStreak(tarefas);
+}
+
+function carregarTarefas() {
+  const t = JSON.parse(localStorage.getItem('tarefas'));
+  if(!t || t.data!==hoje) return;
+  Object.keys(t).forEach(k=>{
+    if(document.getElementById(k)){
+      if(document.getElementById(k).type==='checkbox'){
+        document.getElementById(k).checked=t[k];
+      } else {
+        document.getElementById(k).value=t[k];
+      }
+    }
+  });
+}
+
+function atualizarStreak(t) {
+  const checks = ['agua4','treino','sol','ler','handgrip','sono'];
+  const completo = checks.every(c=>t[c]===true);
+  let s = Number(localStorage.getItem('streak')||0);
+  if(completo && localStorage.getItem('ultimoCompleto')!==hoje){
+    s++; localStorage.setItem('streak',s);
+    localStorage.setItem('ultimoCompleto',hoje);
+  }
+  document.getElementById('streak').innerText=s;
+}
+
+['change','keyup'].forEach(evt=>{
+  document.querySelectorAll('input,select,textarea').forEach(el=>{
+    el.addEventListener(evt, salvarTarefas);
+  });
+});
+
+carregarPerfil();
+carregarTarefas();
+pesoSemanal.value = localStorage.getItem('pesoSemanal')||'';
+document.getElementById('streak').innerText=localStorage.getItem('streak')||0;
+</script>
+</body>
+</html>
